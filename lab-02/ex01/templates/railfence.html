@@ -1,50 +1,62 @@
-class RailFenceCipher:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rail Fence Cipher</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
+</head>
+    <body>
+        <div class="container">
+            <table class="table">
+                <tr><td style="text-align: center; font-weight: bold; font-style: 25px;">RAIL FENCE CIPHER</td></tr>
 
-    def __init__(self):
-        pass
+                <tr><td style="font-weight: bold; color: blue;">ENCRYPTION</td></tr>
 
-    def rail_fence_encrypt (self, plain_text, num_rails):
-        rails = [[] for _ in range (num_rails)]
-        rail_index = 0
-        direction = 1 
-        for char in plain_text:
-            rails[rail_index].append (char)
-            if rail_index == 0:
-                direction = 1
-            elif rail_index == num_rails - 1:
-                direction = -1
-            rail_index += direction
-        cipher_text = ''.join(''.join(rail) for rail in rails)
-        return cipher_text
+                <tr>
+                    <td>
+                        <form method="POST" action="/railfence/encrypt">
+                            <div class="mb-3">
+                                <label class="form-label">Plain Text: </label>
+                                <input type="text" class="form-control" name="InputPlainText" placeholder="Input Plain Text" required autofocus>
+                            </div>
 
-    def rail_fence_decrypt (self, cipher_text, num_rails):
-        rail_lengths=[0]* num_rails
-        rail_index=0
-        direction=1
-         
-        for _ in range (len (cipher_text)):
-            rail_lengths [rail_index] += 1  
-            if rail_index == 0:
-                direction = 1
-            elif rail_index==num_rails -1:
-                direction = -1
-            rail_index += direction
-        rails = []
-        start = 0
-        for length in rail_lengths:
-            rails.append(cipher_text [start:start + length])
-            start += length
-        
-        plain_text =""
-        rail_index=0
-        direction = 1
-        for _ in range (len (cipher_text)):
-            plain_text += rails[rail_index] [0]
-            rails[rail_index] = rails[rail_index] [1:]
-            if rail_index == 0:
-                direction = 1
-            elif rail_index ==num_rails - 1:
-                direction = -1
-            rail_index += direction
-            
-        return plain_text
+                            <div class="mb-3">
+                                <label class="form-label">KEY: </label>
+                                <input type="number" class="form-control" name="InputKeyText" placeholder="Input Rails" required/>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Encrypt</button>
+
+                            <div class="mb-3">
+                                <label class="form-label">Cipher Text: </label>
+                                <input type="text" class="form-control" name="output" value="{{output}}" readonly/>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr><td style="font-weight: bold; color: blue;">DECRYPTION</td></tr>
+
+                <tr>
+                    <td>
+                        <form method="POST" action="/railfence/decrypt">
+                            <div class="mb-3">
+                                <label class="form-label">Cipher Text: </label>
+                                <input type="text" class="form-control" name="InputCipherText" placeholder="Input Cipher Text" required/>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">KEY: </label>
+                                <input type="number" class="form-control" name="InputKeyText" placeholder="Input Rails" required/>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Decrypt</button>
+                        </form>
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+    </body>
+</html>
