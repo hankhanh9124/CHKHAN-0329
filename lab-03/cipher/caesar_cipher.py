@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from ui.caesar import Ui_MainWindow
 import requests
-import json
+import json 
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import Qt
 
@@ -17,7 +17,7 @@ class MyApp(QMainWindow):
     def call_api_encrypt(self):
         url = "http://127.0.0.1:5000/api/caesar/encrypt"
         payload = {
-            "plain_text": self.ui.txtplaintext.toPlainText(),
+            "plain_text": self.ui.txt_plaintext.toPlainText(),
             "key": self.ui.txtKey.toPlainText()
         }
         try:
@@ -34,7 +34,7 @@ class MyApp(QMainWindow):
                         # Handle the case when data is not JSON
                         # You might want to show an error message or handle it in some other way
                         pass
-                self.ui.txtcptext.setPlainText(data["encrypted_message"])
+                self.ui.txtCiphertext.setPlainText(data["encrypted_message"])
                 
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Information)
@@ -49,7 +49,7 @@ class MyApp(QMainWindow):
         url = "http://127.0.0.1:5000/api/caesar/decrypt"
         payload = {
             "cipher_text": self.ui.txtCiphertext.toPlainText(),
-            "key": self.ui.txtkey.toPlainText()
+            "key": self.ui.txtKey.toPlainText()
         }
         try:
             response = requests.post(url, json=payload)
@@ -65,7 +65,7 @@ class MyApp(QMainWindow):
                         # Handle the case when data is not JSON
                         # You might want to show an error message or handle it in some other way
                         pass
-                self.ui.txtplaintext.setPlainText(data["decrypted_message"])
+                self.ui.txt_plaintext.setPlainText(data["decrypted_message"])
                 
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Information)
