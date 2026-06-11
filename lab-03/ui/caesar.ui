@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>590</width>
-    <height>455</height>
+    <width>600</width>
+    <height>504</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>28</pointsize>
+      <pointsize>22</pointsize>
      </font>
     </property>
     <property name="text">
@@ -127,14 +127,23 @@
      <string>Decrypt</string>
     </property>
    </widget>
+   <zorder>label</zorder>
+   <zorder>txt_plaintext</zorder>
+   <zorder>label_2</zorder>
+   <zorder>label_3</zorder>
+   <zorder>label_4</zorder>
+   <zorder>txtKey</zorder>
+   <zorder>btnEncrypt</zorder>
+   <zorder>btnDecrypt</zorder>
+   <zorder>txtCiphertext</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>590</width>
-     <height>21</height>
+     <width>600</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
