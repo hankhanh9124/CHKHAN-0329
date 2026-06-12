@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES + RSA Chat</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light py-4">
+
+    <div class="container" style="max-width: 600px;">
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h3 class="mb-0 fw-bold">AES + RSA Chat</h3>
+                <small class="opacity-75">Giao diện nhắn tin bảo mật giữa 2 bên (2 tab)</small>
+            </div>
+            
+            <div class="card-body">
+                <!-- Cấu hình kết nối -->
+                <div class="row g-2 mb-3 align-items-end">
+                    <div class="col-4">
+                        <label for="server-ip" class="form-label small mb-1">Server IP</label>
+                        <input type="text" id="server-ip" class="form-control form-control-sm" value="127.0.0.1">
+                    </div>
+                    <div class="col-4">
+                        <label for="server-port" class="form-label default small mb-1">Port</label>
+                        <input type="number" id="server-port" class="form-control form-control-sm" value="12345">
+                    </div>
+                    <div class="col-4">
+                        <button id="btn-connect" class="btn btn-primary btn-sm w-100">Connect</button>
+                    </div>
+                </div>
+
+                <!-- Hiển thị khóa (Mật mã học) -->
+                <div class="mb-3">
+                    <label for="rsa-key" class="form-label small mb-1">RSA Public Key (Readonly)</label>
+                    <input type="text" id="rsa-key" class="form-control form-control-sm font-monospace" readonly placeholder="Chờ kết nối...">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="aes-key" class="form-label small mb-1">AES Session Key (Readonly)</label>
+                    <input type="text" id="aes-key" class="form-control form-control-sm font-monospace" readonly placeholder="Chờ kết nối...">
+                </div>
+
+                <hr class="my-3">
+
+                <!-- Ô hiển thị tin nhắn (Lịch sử chat) -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold mb-1">Tin nhắn nhận được (Chat History)</label>
+                    <div id="received-messages" class="border rounded bg-white p-3 overflow-auto" style="height: 220px; font-size: 0.9rem;">
+                        <div class="text-muted text-center py-5">
+                            Chưa có kết nối. Hãy mở 2 tab trình duyệt xếp song song, nhấn "Connect" ở cả 2 tab để bắt đầu nhắn tin qua lại.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nhập tin nhắn cần gửi -->
+                <div class="mb-3">
+                    <label for="input-message" class="form-label small mb-1">Nhập tin nhắn (Plaintext)</label>
+                    <input type="text" id="input-message" class="form-control" placeholder="Nhập tin nhắn đến đâu tự động mã hóa đến đó...">
+                </div>
+
+                <!-- Ô hiển thị bản mã hóa -->
+                <div class="mb-3">
+                    <label for="encrypted-text" class="form-label small text-danger mb-1">Bản mã hóa tự động (Ciphertext - Hex)</label>
+                    <input type="text" id="encrypted-text" class="form-control form-control-sm font-monospace text-danger" readonly placeholder="Bản mã hóa tự động xuất hiện khi nhập tin nhắn...">
+                </div>
+
+                <!-- Nút gửi tin nhắn -->
+                <button id="btn-send" class="btn btn-success w-100 py-2 fw-bold" disabled>Send (Gửi bản tin mã hóa)</button>
+            </div>
+        </div>
+
+        <div class="text-center mt-3 text-muted" style="font-size: 0.8rem;">
+            Bài thực hành: Mã hóa RSA trao đổi khóa AES và gửi tin nhắn bảo mật.
+        </div>
+    </div>
+
+    <!-- Script mô phỏng hành vi Socket & Mã hóa -->
+    <script>
+        const btnConnect = document.getElementById('btn-connect');
+        const btnSend = document.getElementById('btn-send');
+        
+        const textRsaKey = document.getElementById('rsa-key');
+        const inputAesKey = document.getElementById('aes-key');
+        const textInputMsg = document.getElementById('input-message');
+        const textEncrypted = document.getElementById('encrypted-text');
+        const divMsgHistory = document.getElementById('received-messages');
+        
+        let isConnected = false;
+        let myClientId = 'Client_' + Math.floor(Math.random() * 1000);
+        let myRsaPublicKey = `PEM_RSA_KEY_${myClientId}`;
+        let sessionAesKey = '';
+
+        // Khởi tạo BroadcastChannel kết nối 2 tab
+        const chatChannel = new BroadcastChannel('aes_rsa_socket_simulation');
+
+        // Tự động mã hóa AES
+        function autoEncrypt() {
+            const text = textInputMsg.value;
+            if (!text) {
+                textEncrypted.value = '';
+                return;
+            }
+            if (!isConnected) {
+                textEncrypted.value = 'Chưa kết nối! Vui lòng nhấn Connect ở cả 2 tab.';
+                return;
+            }
+
+            // Giả lập mã hóa AES
+            let hexCipher = '';
+            for (let i = 0; i < text.length; i++) {
+                hexCipher += text.charCodeAt(i).toString(16);
+            }
+            hexCipher += '3F8510A2'; // salt giả lập
+            
+            textEncrypted.value = hexCipher.toUpperCase();
+        }
+
+        textInputMsg.addEventListener('input', autoEncrypt);
+
+        // Xử lý gói tin nhận từ tab khác
+        chatChannel.onmessage = (event) => {
+            const data = event.data;
+            if (!isConnected) return;
+
+            switch (data.type) {
+                case 'HELLO':
+                    chatChannel.postMessage({
+                        type: 'RSA_KEY',
+                        sender: myClientId,
+                        rsaKey: myRsaPublicKey
+                    });
+                    writeLog(`[Bắt tay] Đối phương đã mở kết nối. Đang gửi khóa RSA...`);
+                    break;
+
+                case 'RSA_KEY':
+                    if (data.sender !== myClientId) {
+                        textRsaKey.value = data.rsaKey;
+                        writeLog(`[Bắt tay] Nhận RSA Public Key của đối phương.`);
+                        
+                        if (myClientId > data.sender) {
+                            sessionAesKey = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join('').toUpperCase();
+                            inputAesKey.value = sessionAesKey;
+                            
+                            chatChannel.postMessage({
+                                type: 'AES_KEY_EXCHANGE',
+                                sender: myClientId,
+                                aesKeyEncrypted: 'ENC(' + sessionAesKey + ')'
+                            });
+                            writeLog(`[Bắt tay] Sinh khóa phiên AES và mã hóa gửi đi.`);
+                            autoEncrypt();
+                        }
+                    }
+                    break;
+
+                case 'AES_KEY_EXCHANGE':
+                    if (data.sender !== myClientId) {
+                        const encKey = data.aesKeyEncrypted;
+                        const decryptedKey = encKey.replace('ENC(', '').replace(')', '');
+                        sessionAesKey = decryptedKey;
+                        inputAesKey.value = sessionAesKey;
+                        
+                        writeLog(`[Bắt tay] Nhận và giải mã thành công khóa phiên AES.`);
+                        autoEncrypt();
+                    }
+                    break;
+
+                case 'CHAT_MESSAGE':
+                    if (data.sender !== myClientId) {
+                        appendMessage('Bên kia gửi (Mã hóa Hex): ' + data.ciphertext, 'text-danger');
+                        
+                        // Giải mã bản rõ
+                        let decryptedText = '';
+                        try {
+                            const cleanCipher = data.ciphertext.substring(0, data.ciphertext.length - 8);
+                            for (let i = 0; i < cleanCipher.length; i += 2) {
+                                decryptedText += String.fromCharCode(parseInt(cleanCipher.substr(i, 2), 16));
+                            }
+                        } catch (e) {
+                            decryptedText = "Lỗi giải mã.";
+                        }
+                        
+                        appendMessage('Bên kia gửi (Bản rõ giải mã): ' + decryptedText, 'text-success fw-bold mb-2');
+                    }
+                    break;
+            }
+        };
+
+        function writeLog(msg) {
+            const div = document.createElement('div');
+            div.className = 'text-muted small italic';
+            div.innerText = msg;
+            divMsgHistory.appendChild(div);
+            divMsgHistory.scrollTop = divMsgHistory.scrollHeight;
+        }
+
+        // Kết nối
+        btnConnect.addEventListener('click', () => {
+            if (!isConnected) {
+                isConnected = true;
+                btnConnect.innerText = 'Disconnect';
+                btnConnect.className = 'btn btn-danger btn-sm w-100';
+                
+                divMsgHistory.innerHTML = '<div class="text-success small">[System] Đang tìm thiết bị đối diện kết nối...</div>';
+                btnSend.disabled = false;
+
+                chatChannel.postMessage({
+                    type: 'HELLO',
+                    sender: myClientId
+                });
+
+                setTimeout(() => {
+                    if (sessionAesKey === '') {
+                        writeLog('[Lưu ý] Hãy mở tab thứ 2 của file này để thực hiện nhắn tin 2 bên qua lại.');
+                    }
+                }, 1000);
+
+            } else {
+                isConnected = false;
+                btnConnect.innerText = 'Connect';
+                btnConnect.className = 'btn btn-primary btn-sm w-100';
+                
+                textRsaKey.value = '';
+                inputAesKey.value = '';
+                textInputMsg.value = '';
+                textEncrypted.value = '';
+                btnSend.disabled = true;
+                sessionAesKey = '';
+                
+                divMsgHistory.innerHTML = '<div class="text-muted text-center py-5">Chưa có kết nối. Hãy mở 2 tab trình duyệt xếp song song, nhấn "Connect" ở cả 2 tab để bắt đầu nhắn tin qua lại.</div>';
+            }
+        });
+
+        // Gửi tin nhắn
+        btnSend.addEventListener('click', () => {
+            const cipherText = textEncrypted.value;
+            const plainText = textInputMsg.value.trim();
+
+            if (!plainText || !cipherText || cipherText.includes('Chưa kết nối')) {
+                alert('Vui lòng nhập tin nhắn.');
+                return;
+            }
+
+            // Hiển thị tin nhắn của mình
+            appendMessage('Bạn gửi (Mã hóa Hex): ' + cipherText, 'text-primary');
+            appendMessage('Bạn gửi (Bản rõ): ' + plainText, 'text-dark fw-bold mb-2');
+
+            // Gửi sang tab kia
+            chatChannel.postMessage({
+                type: 'CHAT_MESSAGE',
+                sender: myClientId,
+                ciphertext: cipherText
+            });
+
+            // Clear input
+            textInputMsg.value = '';
+            textEncrypted.value = '';
+        });
+
+        function appendMessage(msg, className) {
+            const div = document.createElement('div');
+            div.className = className;
+            div.innerText = msg;
+            divMsgHistory.appendChild(div);
+            divMsgHistory.scrollTop = divMsgHistory.scrollHeight;
+        }
+    </script>
+</body>
+</html>
