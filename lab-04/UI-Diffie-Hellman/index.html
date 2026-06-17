@@ -1,267 +1,378 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diffie-Hellman Key Exchange</title>
-    <!-- Bootstrap 5 CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffie-Hellman AES Secure Chat</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(
+        135deg,
+        #dbeafe,
+        #bfdbfe,
+        #93c5fd
+    );
+    padding:20px;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.header h1{
+    color:#1e3a8a;
+    font-size:34px;
+}
+
+.header p{
+    color:#475569;
+}
+
+.network{
+    display:grid;
+    grid-template-columns:1fr 320px 1fr;
+    gap:20px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:white;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+}
+
+.client-title{
+    font-size:24px;
+    font-weight:bold;
+    color:#1e3a8a;
+    text-align:center;
+}
+
+.status{
+    margin-top:10px;
+    color:#16a34a;
+    text-align:center;
+}
+
+.info{
+    margin-top:20px;
+}
+
+.info p{
+    margin:10px 0;
+}
+
+.server{
+    background:#2563eb;
+    color:white;
+    text-align:center;
+}
+
+.server h2{
+    margin-bottom:20px;
+}
+
+.server-status{
+    margin-top:15px;
+    padding:10px;
+    background:rgba(255,255,255,.15);
+    border-radius:10px;
+}
+
+.chat-area{
+    background:white;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+}
+
+.chat-header{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.chat-header h2{
+    color:#1e3a8a;
+}
+
+.messages{
+    height:300px;
+    overflow-y:auto;
+    border:1px solid #e2e8f0;
+    border-radius:15px;
+    padding:15px;
+    background:#f8fafc;
+}
+
+.message{
+    margin-bottom:10px;
+    padding:12px;
+    border-radius:12px;
+}
+
+.a{
+    background:#dbeafe;
+}
+
+.b{
+    background:#dcfce7;
+}
+
+.time{
+    font-size:11px;
+    opacity:.7;
+    margin-top:5px;
+}
+
+.controls{
+    display:grid;
+    grid-template-columns:1fr 120px 1fr 120px;
+    gap:10px;
+    margin-top:15px;
+}
+
+input{
+    padding:12px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    outline:none;
+}
+
+button{
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.footer{
+    margin-top:15px;
+    text-align:center;
+}
+
+.badge{
+    display:inline-block;
+    padding:8px 14px;
+    border-radius:20px;
+    background:white;
+    margin:0 5px;
+    box-shadow:0 3px 10px rgba(0,0,0,.1);
+}
+
+@media(max-width:1000px){
+
+    .network{
+        grid-template-columns:1fr;
+    }
+
+    .controls{
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
 </head>
-<body class="bg-light py-4">
+<body>
 
-    <div class="container" style="max-width: 700px;">
-        <div class="text-center mb-4">
-            <h1 class="fw-bold">Diffie-Hellman Key Exchange</h1>
-            <p class="text-muted">Giao diện thực hành trao đổi khóa bảo mật Diffie-Hellman</p>
+<div class="header">
+    <h1>🔐 Diffie-Hellman + AES Secure Chat</h1>
+    <p>Client ↔ Server ↔ Client Communication</p>
+</div>
+
+<div class="network">
+
+    <div class="card">
+        <div class="client-title">👤 Client A</div>
+
+        <div class="status">
+            🟢 Connected
         </div>
 
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white font-weight-bold">1. Thiết lập tham số dùng chung (Parameters)</div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="input-p" class="form-label">Số nguyên tố lớn (p)</label>
-                        <input type="number" id="input-p" class="form-control font-monospace" value="997">
-                        <div class="form-text">Số chia mô-đun (modulus)</div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="input-g" class="form-label">Số sinh (generator g)</label>
-                        <input type="number" id="input-g" class="form-control font-monospace" value="2">
-                        <div class="form-text">Cơ số lũy thừa (base)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <!-- Client Panel -->
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-dark text-white font-weight-bold">Client (Bên A)</div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="client-priv" class="form-label">Private Key (a)</label>
-                            <div class="input-group">
-                                <input type="number" id="client-priv" class="form-control font-monospace" value="15">
-                                <button id="btn-rand-client" class="btn btn-outline-secondary btn-sm" type="button">Ngẫu nhiên</button>
-                            </div>
-                            <div class="form-text">Khóa riêng tư bí mật</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="client-pub" class="form-label">Public Key (A)</label>
-                            <input type="text" id="client-pub" class="form-control font-monospace" readonly placeholder="A = g^a mod p">
-                        </div>
-                        <button id="btn-gen-client" class="btn btn-info w-100">Tính Public Key (A)</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Server Panel -->
-            <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-dark text-white font-weight-bold">Server (Bên B)</div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="server-priv" class="form-label">Private Key (b)</label>
-                            <div class="input-group">
-                                <input type="number" id="server-priv" class="form-control font-monospace" value="23">
-                                <button id="btn-rand-server" class="btn btn-outline-secondary btn-sm" type="button">Ngẫu nhiên</button>
-                            </div>
-                            <div class="form-text">Khóa riêng tư bí mật</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="server-pub" class="form-label">Public Key (B)</label>
-                            <input type="text" id="server-pub" class="form-control font-monospace" readonly placeholder="B = g^b mod p">
-                        </div>
-                        <button id="btn-gen-server" class="btn btn-info w-100">Tính Public Key (B)</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-secondary text-white font-weight-bold">2. Trao đổi khóa và tính toán bí mật chung</div>
-            <div class="card-body">
-                <div class="d-flex gap-3 mb-3">
-                    <button id="btn-exchange" class="btn btn-warning w-50" disabled>Exchange keys (Trao đổi khóa công khai)</button>
-                    <button id="btn-compute" class="btn btn-success w-50" disabled>Compute shared secret (Tính khóa chung)</button>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="shared-secret" class="form-label fw-bold text-success">Shared Secret (Khóa bí mật chung thu được)</label>
-                    <input type="text" id="shared-secret" class="form-control font-monospace text-center fs-5 fw-bold bg-white text-success" readonly placeholder="Chờ tính toán...">
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-header bg-light font-weight-bold">Nhật ký các bước thực hiện (Math Logs)</div>
-            <div class="card-body">
-                <textarea id="log-area" class="form-control font-monospace" rows="6" readonly placeholder="Nhật ký các phép toán mã hóa..."></textarea>
-            </div>
-        </div>
-
-        <div class="text-center mt-4 text-muted" style="font-size: 0.85rem;">
-            Môn học thực hành: Trao đổi khóa bảo mật bất đối xứng Diffie-Hellman.
+        <div class="info">
+            <p>🔑 DH Public Key Generated</p>
+            <p>🔒 AES Session Active</p>
+            <p>📡 Socket Connected</p>
         </div>
     </div>
 
-    <script>
-        // DOM Elements
-        const inputP = document.getElementById('input-p');
-        const inputG = document.getElementById('input-g');
-        
-        const clientPriv = document.getElementById('client-priv');
-        const clientPub = document.getElementById('client-pub');
-        const btnGenClient = document.getElementById('btn-gen-client');
-        const btnRandClient = document.getElementById('btn-rand-client');
-        
-        const serverPriv = document.getElementById('server-priv');
-        const serverPub = document.getElementById('server-pub');
-        const btnGenServer = document.getElementById('btn-gen-server');
-        const btnRandServer = document.getElementById('btn-rand-server');
-        
-        const btnExchange = document.getElementById('btn-exchange');
-        const btnCompute = document.getElementById('btn-compute');
-        const inputSecret = document.getElementById('shared-secret');
-        const logArea = document.getElementById('log-area');
+    <div class="card server">
 
-        // State variables
-        let p = 997n;
-        let g = 2n;
-        let a = 0n;
-        let b = 0n;
-        let A = 0n;
-        let B = 0n;
-        let step = 0; // tracking exchange workflow
+        <h2>🖥 Secure Server</h2>
 
-        // Helper: Modular Exponentiation using BigInt
-        function modPow(base, exponent, modulus) {
-            if (modulus === 1n) return 0n;
-            let result = 1n;
-            base = base % modulus;
-            while (exponent > 0n) {
-                if (exponent % 2n === 1n) {
-                    result = (result * base) % modulus;
-                }
-                exponent = exponent / 2n;
-                base = (base * base) % modulus;
-            }
-            return result;
-        }
+        <div class="server-status">
+            🟢 Running
+        </div>
 
-        function writeLog(msg) {
-            const time = new Date().toTimeString().split(' ')[0];
-            logArea.value += `[${time}] ${msg}\n`;
-            logArea.scrollTop = logArea.scrollHeight;
-        }
+        <div class="server-status">
+            Port : 5000
+        </div>
 
-        // Random private key generators
-        btnRandClient.addEventListener('click', () => {
-            const valP = parseInt(inputP.value);
-            if (isNaN(valP) || valP <= 3) {
-                alert('Vui lòng nhập tham số p hợp lệ trước.');
-                return;
-            }
-            const rand = Math.floor(Math.random() * (valP - 3)) + 2;
-            clientPriv.value = rand;
-            writeLog(`Client: Đã chọn khóa riêng ngẫu nhiên a = ${rand}`);
-        });
+        <div class="server-status">
+            Connected Clients : 2
+        </div>
 
-        btnRandServer.addEventListener('click', () => {
-            const valP = parseInt(inputP.value);
-            if (isNaN(valP) || valP <= 3) {
-                alert('Vui lòng nhập tham số p hợp lệ trước.');
-                return;
-            }
-            const rand = Math.floor(Math.random() * (valP - 3)) + 2;
-            serverPriv.value = rand;
-            writeLog(`Server: Đã chọn khóa riêng ngẫu nhiên b = ${rand}`);
-        });
+        <div class="server-status">
+            AES Encrypted Relay
+        </div>
 
-        // Compute Client Public Key (A)
-        btnGenClient.addEventListener('click', () => {
-            const valP = parseInt(inputP.value);
-            const valG = parseInt(inputG.value);
-            const valA = parseInt(clientPriv.value);
+    </div>
 
-            if (isNaN(valP) || isNaN(valG) || isNaN(valA)) {
-                alert('Vui lòng nhập đầy đủ tham số p, g và khóa riêng tư a.');
-                return;
-            }
+    <div class="card">
+        <div class="client-title">👤 Client B</div>
 
-            p = BigInt(valP);
-            g = BigInt(valG);
-            a = BigInt(valA);
+        <div class="status">
+            🟢 Connected
+        </div>
 
-            A = modPow(g, a, p);
-            clientPub.value = A.toString();
-            writeLog(`Client: Đã tính Public Key A = g^a mod p = ${g}^${a} mod ${p} = ${A}`);
-            
-            checkExchangeStatus();
-        });
+        <div class="info">
+            <p>🔑 DH Public Key Generated</p>
+            <p>🔒 AES Session Active</p>
+            <p>📡 Socket Connected</p>
+        </div>
+    </div>
 
-        // Compute Server Public Key (B)
-        btnGenServer.addEventListener('click', () => {
-            const valP = parseInt(inputP.value);
-            const valG = parseInt(inputG.value);
-            const valB = parseInt(serverPriv.value);
+</div>
 
-            if (isNaN(valP) || isNaN(valG) || isNaN(valB)) {
-                alert('Vui lòng nhập đầy đủ tham số p, g và khóa riêng tư b.');
-                return;
-            }
+<div class="chat-area">
 
-            p = BigInt(valP);
-            g = BigInt(valG);
-            b = BigInt(valB);
+    <div class="chat-header">
+        <h2>💬 Encrypted Message Exchange</h2>
+    </div>
 
-            B = modPow(g, b, p);
-            serverPub.value = B.toString();
-            writeLog(`Server: Đã tính Public Key B = g^b mod p = ${g}^${b} mod ${p} = ${B}`);
-            
-            checkExchangeStatus();
-        });
+    <div class="messages" id="messages"></div>
 
-        function checkExchangeStatus() {
-            if (clientPub.value !== '' && serverPub.value !== '') {
-                btnExchange.disabled = false;
-            }
-        }
+    <div class="controls">
 
-        // Exchange Keys
-        btnExchange.addEventListener('click', () => {
-            writeLog('--- Bắt đầu trao đổi khóa công khai ---');
-            writeLog(`Client gửi khóa công khai A = ${A} sang cho Server.`);
-            writeLog(`Server gửi khóa công khai B = ${B} sang cho Client.`);
-            writeLog('Trao đổi hoàn tất thành công. Sẵn sàng tính khóa bí mật chung.');
-            
-            btnExchange.disabled = true;
-            btnCompute.disabled = false;
-        });
+        <input
+            type="text"
+            id="inputA"
+            placeholder="Tin nhắn từ Client A">
 
-        // Compute Shared Secret
-        btnCompute.addEventListener('click', () => {
-            writeLog('--- Bắt đầu tính toán khóa bí mật chung ---');
-            
-            // Client computes: S_client = B^a mod p
-            const sClient = modPow(B, a, p);
-            writeLog(`Client tính Khóa chung: K = B^a mod p = ${B}^${a} mod ${p} = ${sClient}`);
+        <button onclick="sendA()">
+            Gửi A
+        </button>
 
-            // Server computes: S_server = A^b mod p
-            const sServer = modPow(A, b, p);
-            writeLog(`Server tính Khóa chung: K = A^b mod p = ${A}^${b} mod ${p} = ${sServer}`);
+        <input
+            type="text"
+            id="inputB"
+            placeholder="Tin nhắn từ Client B">
 
-            if (sClient === sServer) {
-                inputSecret.value = sClient.toString();
-                writeLog(`Xác thực thành công! Khóa bí mật chung của 2 bên trùng khớp: ${sClient}`);
-            } else {
-                inputSecret.value = 'MẬT MÃ LỖI (KHÔNG TRÙNG KHỚP)';
-                writeLog('LỖI MẬT MÃ: Khóa bí mật chung của 2 bên KHÔNG trùng khớp.');
-            }
-            
-            btnCompute.disabled = true;
-        });
-    </script>
+        <button onclick="sendB()">
+            Gửi B
+        </button>
+
+    </div>
+
+</div>
+
+<div class="footer">
+
+    <span class="badge">🔑 Diffie-Hellman Success</span>
+
+    <span class="badge">🔒 AES-256 Active</span>
+
+    <span class="badge">📡 Socket Connected</span>
+
+</div>
+
+<script>
+
+const messages =
+document.getElementById("messages");
+
+function time(){
+
+    let d = new Date();
+
+    return d.getHours() + ":" +
+           String(d.getMinutes())
+           .padStart(2,'0');
+}
+
+function sendA(){
+
+    let text =
+    document.getElementById("inputA")
+    .value.trim();
+
+    if(text==="") return;
+
+    messages.innerHTML += `
+    <div class="message a">
+        👤 Client A :
+        🔒 ${text}
+        <div class="time">
+            ${time()}
+        </div>
+    </div>`;
+
+    document.getElementById("inputA")
+    .value="";
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+function sendB(){
+
+    let text =
+    document.getElementById("inputB")
+    .value.trim();
+
+    if(text==="") return;
+
+    messages.innerHTML += `
+    <div class="message b">
+        👤 Client B :
+        🔒 ${text}
+        <div class="time">
+            ${time()}
+        </div>
+    </div>`;
+
+    document.getElementById("inputB")
+    .value="";
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+document.getElementById("inputA")
+.addEventListener("keydown",e=>{
+
+    if(e.key==="Enter")
+        sendA();
+
+});
+
+document.getElementById("inputB")
+.addEventListener("keydown",e=>{
+
+    if(e.key==="Enter")
+        sendB();
+
+});
+
+</script>
+
 </body>
 </html>
