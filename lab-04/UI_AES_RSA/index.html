@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Chat AES-RSA Socket</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#dbeafe,#bfdbfe,#93c5fd);
+    padding:20px;
+}
+
+.wrapper{
+    width:100%;
+    height:95vh;
+}
+
+.title{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.title h1{
+    color:#1e3a8a;
+    font-size:36px;
+    font-weight:700;
+}
+
+.title p{
+    color:#475569;
+    margin-top:5px;
+}
+
+.container{
+    display:flex;
+    gap:20px;
+    height:85%;
+}
+
+.chat-box{
+    flex:1;
+    background:rgba(255,255,255,.85);
+    backdrop-filter:blur(20px);
+    border-radius:25px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.6);
+    box-shadow:0 15px 35px rgba(0,0,0,.12);
+    display:flex;
+    flex-direction:column;
+}
+
+.header{
+    padding:18px;
+    text-align:center;
+    background:white;
+    border-bottom:1px solid #e2e8f0;
+}
+
+.username{
+    font-size:24px;
+    font-weight:700;
+    color:#1e3a8a;
+}
+
+.status{
+    margin-top:5px;
+    color:#16a34a;
+    font-size:13px;
+}
+
+.messages{
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
+    background:#f8fafc;
+}
+
+.message{
+    padding:12px 15px;
+    margin-bottom:12px;
+    border-radius:18px;
+    width:fit-content;
+    max-width:75%;
+    animation:fadeIn .3s;
+}
+
+.sent{
+    background:#2563eb;
+    color:white;
+    margin-left:auto;
+}
+
+.received{
+    background:#e2e8f0;
+    color:#1e293b;
+}
+
+.time{
+    margin-top:5px;
+    font-size:11px;
+    opacity:.7;
+}
+
+.input-area{
+    display:flex;
+    gap:10px;
+    padding:15px;
+    background:white;
+    border-top:1px solid #e2e8f0;
+}
+
+.input-area input{
+    flex:1;
+    border:1px solid #cbd5e1;
+    outline:none;
+    padding:14px;
+    border-radius:15px;
+    background:white;
+    color:#1e293b;
+}
+
+.input-area input:focus{
+    border-color:#3b82f6;
+}
+
+.input-area button{
+    border:none;
+    padding:0 20px;
+    border-radius:15px;
+    cursor:pointer;
+    background:#3b82f6;
+    color:white;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.input-area button:hover{
+    background:#2563eb;
+}
+
+.footer{
+    text-align:center;
+    margin-top:12px;
+}
+
+.badge{
+    display:inline-block;
+    margin:0 5px;
+    padding:8px 14px;
+    border-radius:20px;
+    background:white;
+    color:#1e3a8a;
+    font-weight:600;
+    box-shadow:0 5px 10px rgba(0,0,0,.08);
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@media(max-width:900px){
+    .container{
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <div class="title">
+        <h1>🔒 Secure Chat AES-RSA Socket</h1>
+        <p>Mô phỏng giao tiếp Client ↔ Server ↔ Client</p>
+    </div>
+
+    <div class="container">
+
+        <!-- CLIENT A -->
+        <div class="chat-box">
+
+            <div class="header">
+                <div class="username">👤 Client A</div>
+                <div class="status">🟢 Online | RSA Connected | AES Active</div>
+            </div>
+
+            <div class="messages" id="chatA"></div>
+
+            <div class="input-area">
+                <input type="text" id="inputA" placeholder="Nhập tin nhắn...">
+                <button onclick="sendA()">Gửi</button>
+            </div>
+
+        </div>
+
+        <!-- CLIENT B -->
+        <div class="chat-box">
+
+            <div class="header">
+                <div class="username">👤 Client B</div>
+                <div class="status">🟢 Online | RSA Connected | AES Active</div>
+            </div>
+
+            <div class="messages" id="chatB"></div>
+
+            <div class="input-area">
+                <input type="text" id="inputB" placeholder="Nhập tin nhắn...">
+                <button onclick="sendB()">Gửi</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <span class="badge">🔑 RSA-2048</span>
+        <span class="badge">🔒 AES-256</span>
+        <span class="badge">🖥 Server Online</span>
+    </div>
+
+</div>
+
+<script>
+
+const chatA = document.getElementById("chatA");
+const chatB = document.getElementById("chatB");
+
+const inputA = document.getElementById("inputA");
+const inputB = document.getElementById("inputB");
+
+function getTime(){
+    const now = new Date();
+    return now.getHours() + ":" +
+           String(now.getMinutes()).padStart(2,'0');
+}
+
+function scrollBottom(){
+    chatA.scrollTop = chatA.scrollHeight;
+    chatB.scrollTop = chatB.scrollHeight;
+}
+
+function sendA(){
+
+    const text = inputA.value.trim();
+
+    if(text === "") return;
+
+    const time = getTime();
+
+    chatA.innerHTML += `
+        <div class="message sent">
+            ClientA: ${text}
+            <div class="time">${time}</div>
+        </div>
+    `;
+
+    chatB.innerHTML += `
+        <div class="message received">
+            Client A: ${text}
+            <div class="time">${time}</div>
+        </div>
+    `;
+
+    inputA.value = "";
+    scrollBottom();
+    inputA.focus();
+}
+
+function sendB(){
+
+    const text = inputB.value.trim();
+
+    if(text === "") return;
+
+    const time = getTime();
+
+    chatB.innerHTML += `
+        <div class="message sent">
+            Client B: ${text}
+            <div class="time">${time}</div>
+        </div>
+    `;
+
+    chatA.innerHTML += `
+        <div class="message received">
+            Client B: ${text}
+            <div class="time">${time}</div>
+        </div>
+    `;
+
+    inputB.value = "";
+    scrollBottom();
+    inputB.focus();
+}
+
+inputA.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        e.preventDefault();
+        sendA();
+    }
+});
+
+inputB.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        e.preventDefault();
+        sendB();
+    }
+});
+
+</script>
+
+</body>
+</html>

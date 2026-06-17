@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffie-Hellman AES Secure Chat</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(
+        135deg,
+        #dbeafe,
+        #bfdbfe,
+        #93c5fd
+    );
+    padding:20px;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.header h1{
+    color:#1e3a8a;
+    font-size:34px;
+}
+
+.header p{
+    color:#475569;
+}
+
+.network{
+    display:grid;
+    grid-template-columns:1fr 320px 1fr;
+    gap:20px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:white;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+}
+
+.client-title{
+    font-size:24px;
+    font-weight:bold;
+    color:#1e3a8a;
+    text-align:center;
+}
+
+.status{
+    margin-top:10px;
+    color:#16a34a;
+    text-align:center;
+}
+
+.info{
+    margin-top:20px;
+}
+
+.info p{
+    margin:10px 0;
+}
+
+.server{
+    background:#2563eb;
+    color:white;
+    text-align:center;
+}
+
+.server h2{
+    margin-bottom:20px;
+}
+
+.server-status{
+    margin-top:15px;
+    padding:10px;
+    background:rgba(255,255,255,.15);
+    border-radius:10px;
+}
+
+.chat-area{
+    background:white;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+}
+
+.chat-header{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.chat-header h2{
+    color:#1e3a8a;
+}
+
+.messages{
+    height:300px;
+    overflow-y:auto;
+    border:1px solid #e2e8f0;
+    border-radius:15px;
+    padding:15px;
+    background:#f8fafc;
+}
+
+.message{
+    margin-bottom:10px;
+    padding:12px;
+    border-radius:12px;
+}
+
+.a{
+    background:#dbeafe;
+}
+
+.b{
+    background:#dcfce7;
+}
+
+.time{
+    font-size:11px;
+    opacity:.7;
+    margin-top:5px;
+}
+
+.controls{
+    display:grid;
+    grid-template-columns:1fr 120px 1fr 120px;
+    gap:10px;
+    margin-top:15px;
+}
+
+input{
+    padding:12px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    outline:none;
+}
+
+button{
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.footer{
+    margin-top:15px;
+    text-align:center;
+}
+
+.badge{
+    display:inline-block;
+    padding:8px 14px;
+    border-radius:20px;
+    background:white;
+    margin:0 5px;
+    box-shadow:0 3px 10px rgba(0,0,0,.1);
+}
+
+@media(max-width:1000px){
+
+    .network{
+        grid-template-columns:1fr;
+    }
+
+    .controls{
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🔐 Diffie-Hellman + AES Secure Chat</h1>
+    <p>Client ↔ Server ↔ Client Communication</p>
+</div>
+
+<div class="network">
+
+    <div class="card">
+        <div class="client-title">👤 Client A</div>
+
+        <div class="status">
+            🟢 Connected
+        </div>
+
+        <div class="info">
+            <p>🔑 DH Public Key Generated</p>
+            <p>🔒 AES Session Active</p>
+            <p>📡 Socket Connected</p>
+        </div>
+    </div>
+
+    <div class="card server">
+
+        <h2>🖥 Secure Server</h2>
+
+        <div class="server-status">
+            🟢 Running
+        </div>
+
+        <div class="server-status">
+            Port : 5000
+        </div>
+
+        <div class="server-status">
+            Connected Clients : 2
+        </div>
+
+        <div class="server-status">
+            AES Encrypted Relay
+        </div>
+
+    </div>
+
+    <div class="card">
+        <div class="client-title">👤 Client B</div>
+
+        <div class="status">
+            🟢 Connected
+        </div>
+
+        <div class="info">
+            <p>🔑 DH Public Key Generated</p>
+            <p>🔒 AES Session Active</p>
+            <p>📡 Socket Connected</p>
+        </div>
+    </div>
+
+</div>
+
+<div class="chat-area">
+
+    <div class="chat-header">
+        <h2>💬 Encrypted Message Exchange</h2>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="controls">
+
+        <input
+            type="text"
+            id="inputA"
+            placeholder="Tin nhắn từ Client A">
+
+        <button onclick="sendA()">
+            Gửi A
+        </button>
+
+        <input
+            type="text"
+            id="inputB"
+            placeholder="Tin nhắn từ Client B">
+
+        <button onclick="sendB()">
+            Gửi B
+        </button>
+
+    </div>
+
+</div>
+
+<div class="footer">
+
+    <span class="badge">🔑 Diffie-Hellman Success</span>
+
+    <span class="badge">🔒 AES-256 Active</span>
+
+    <span class="badge">📡 Socket Connected</span>
+
+</div>
+
+<script>
+
+const messages =
+document.getElementById("messages");
+
+function time(){
+
+    let d = new Date();
+
+    return d.getHours() + ":" +
+           String(d.getMinutes())
+           .padStart(2,'0');
+}
+
+function sendA(){
+
+    let text =
+    document.getElementById("inputA")
+    .value.trim();
+
+    if(text==="") return;
+
+    messages.innerHTML += `
+    <div class="message a">
+        👤 Client A :
+        🔒 ${text}
+        <div class="time">
+            ${time()}
+        </div>
+    </div>`;
+
+    document.getElementById("inputA")
+    .value="";
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+function sendB(){
+
+    let text =
+    document.getElementById("inputB")
+    .value.trim();
+
+    if(text==="") return;
+
+    messages.innerHTML += `
+    <div class="message b">
+        👤 Client B :
+        🔒 ${text}
+        <div class="time">
+            ${time()}
+        </div>
+    </div>`;
+
+    document.getElementById("inputB")
+    .value="";
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+document.getElementById("inputA")
+.addEventListener("keydown",e=>{
+
+    if(e.key==="Enter")
+        sendA();
+
+});
+
+document.getElementById("inputB")
+.addEventListener("keydown",e=>{
+
+    if(e.key==="Enter")
+        sendB();
+
+});
+
+</script>
+
+</body>
+</html>
