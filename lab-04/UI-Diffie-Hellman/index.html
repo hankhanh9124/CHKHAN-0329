@@ -1,377 +1,341 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diffie-Hellman AES Secure Chat</title>
+<title>Secure Chat Pro (Max 2 Clients)</title>
 
 <style>
-
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
+    font-family:Arial,sans-serif;
 }
 
 body{
-    min-height:100vh;
-    background:linear-gradient(
-        135deg,
-        #dbeafe,
-        #bfdbfe,
-        #93c5fd
-    );
-    padding:20px;
+    background:#f4f6f9;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.chat-box{
+    width:700px;
+    background:white;
+    border:1px solid #ccc;
+    border-radius:8px;
+    overflow:hidden;
 }
 
 .header{
+    background:#1976d2;
+    color:white;
+    padding:15px;
     text-align:center;
-    margin-bottom:20px;
+    position: relative;
 }
 
-.header h1{
-    color:#1e3a8a;
-    font-size:34px;
-}
-
-.header p{
-    color:#475569;
-}
-
-.network{
-    display:grid;
-    grid-template-columns:1fr 320px 1fr;
-    gap:20px;
-    margin-bottom:20px;
-}
-
-.card{
-    background:white;
-    border-radius:20px;
-    padding:20px;
-    box-shadow:0 10px 25px rgba(0,0,0,.1);
-}
-
-.client-title{
-    font-size:24px;
-    font-weight:bold;
-    color:#1e3a8a;
-    text-align:center;
-}
-
-.status{
-    margin-top:10px;
-    color:#16a34a;
-    text-align:center;
+.header h2{
+    margin-bottom:5px;
 }
 
 .info{
-    margin-top:20px;
+    font-size:13px;
+    margin-bottom: 8px;
 }
 
-.info p{
-    margin:10px 0;
+.mode-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: 0.3s;
 }
-
-.server{
-    background:#2563eb;
-    color:white;
-    text-align:center;
+.mode-btn:hover {
+    background: #388e3c;
 }
-
-.server h2{
-    margin-bottom:20px;
+.mode-btn.group-mode {
+    background: #e53935;
 }
-
-.server-status{
-    margin-top:15px;
-    padding:10px;
-    background:rgba(255,255,255,.15);
-    border-radius:10px;
-}
-
-.chat-area{
-    background:white;
-    border-radius:20px;
-    padding:20px;
-    box-shadow:0 10px 25px rgba(0,0,0,.1);
-}
-
-.chat-header{
-    text-align:center;
-    margin-bottom:15px;
-}
-
-.chat-header h2{
-    color:#1e3a8a;
+.mode-btn.group-mode:hover {
+    background: #c62828;
 }
 
 .messages{
-    height:300px;
-    overflow-y:auto;
-    border:1px solid #e2e8f0;
-    border-radius:15px;
+    height:400px;
     padding:15px;
-    background:#f8fafc;
+    overflow-y:auto;
+    background:#fafafa;
 }
 
 .message{
     margin-bottom:10px;
+}
+
+.sender{
+    font-weight:bold;
+    color:#1976d2;
+}
+
+.system {
+    color: #e65100;
+    font-style: italic;
+    font-weight: bold;
+}
+
+.text{
+    margin-left:10px;
+}
+
+.ciphertext-msg {
+    color: #888;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+.input-area{
+    display:flex;
+    border-top:1px solid #ccc;
+}
+
+.input-area input{
+    flex:1;
     padding:12px;
-    border-radius:12px;
-}
-
-.a{
-    background:#dbeafe;
-}
-
-.b{
-    background:#dcfce7;
-}
-
-.time{
-    font-size:11px;
-    opacity:.7;
-    margin-top:5px;
-}
-
-.controls{
-    display:grid;
-    grid-template-columns:1fr 120px 1fr 120px;
-    gap:10px;
-    margin-top:15px;
-}
-
-input{
-    padding:12px;
-    border:1px solid #cbd5e1;
-    border-radius:10px;
+    border:none;
     outline:none;
 }
 
-button{
+.input-area button{
+    width:100px;
     border:none;
-    border-radius:10px;
-    background:#2563eb;
+    background:#1976d2;
     color:white;
     cursor:pointer;
-    font-weight:bold;
 }
 
-button:hover{
-    background:#1d4ed8;
+.input-area button:hover{
+    background:#1565c0;
 }
-
-.footer{
-    margin-top:15px;
-    text-align:center;
-}
-
-.badge{
-    display:inline-block;
-    padding:8px 14px;
-    border-radius:20px;
-    background:white;
-    margin:0 5px;
-    box-shadow:0 3px 10px rgba(0,0,0,.1);
-}
-
-@media(max-width:1000px){
-
-    .network{
-        grid-template-columns:1fr;
-    }
-
-    .controls{
-        grid-template-columns:1fr;
-    }
-}
-
 </style>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
 </head>
 <body>
 
-<div class="header">
-    <h1>🔐 Diffie-Hellman + AES Secure Chat</h1>
-    <p>Client ↔ Server ↔ Client Communication</p>
-</div>
+<div class="chat-box">
 
-<div class="network">
-
-    <div class="card">
-        <div class="client-title">👤 Client A</div>
-
-        <div class="status">
-            🟢 Connected
-        </div>
-
-        <div class="info">
-            <p>🔑 DH Public Key Generated</p>
-            <p>🔒 AES Session Active</p>
-            <p>📡 Socket Connected</p>
-        </div>
-    </div>
-
-    <div class="card server">
-
-        <h2>🖥 Secure Server</h2>
-
-        <div class="server-status">
-            🟢 Running
-        </div>
-
-        <div class="server-status">
-            Port : 5000
-        </div>
-
-        <div class="server-status">
-            Connected Clients : 2
-        </div>
-
-        <div class="server-status">
-            AES Encrypted Relay
-        </div>
-
-    </div>
-
-    <div class="card">
-        <div class="client-title">👤 Client B</div>
-
-        <div class="status">
-            🟢 Connected
-        </div>
-
-        <div class="info">
-            <p>🔑 DH Public Key Generated</p>
-            <p>🔒 AES Session Active</p>
-            <p>📡 Socket Connected</p>
-        </div>
-    </div>
-
-</div>
-
-<div class="chat-area">
-
-    <div class="chat-header">
-        <h2>💬 Encrypted Message Exchange</h2>
+    <div class="header">
+        <h2>DIFFER-HELLMAN-CHAT</h2>
+        <button id="modeBtn" class="mode-btn" onclick="switchMode()">
+            Chế độ hiện tại: CHAT ĐÔI (Mã hóa Cặp)
+        </button>
     </div>
 
     <div class="messages" id="messages"></div>
 
-    <div class="controls">
-
+    <div class="input-area">
         <input
             type="text"
-            id="inputA"
-            placeholder="Tin nhắn từ Client A">
-
-        <button onclick="sendA()">
-            Gửi A
-        </button>
-
-        <input
-            type="text"
-            id="inputB"
-            placeholder="Tin nhắn từ Client B">
-
-        <button onclick="sendB()">
-            Gửi B
-        </button>
-
+            id="messageInput"
+            placeholder="Đang đợi người thứ 2 tham gia để hoán đổi khóa..."
+            disabled
+        >
+        <button id="sendBtn" onclick="sendMessage()" disabled>Gửi</button>
     </div>
 
 </div>
 
-<div class="footer">
+<script> 
+const myUsername = "Client_" + Math.floor(Math.random() * 100);
+const socket = io('http://127.0.0.1:5000');
 
-    <span class="badge">🔑 Diffie-Hellman Success</span>
-
-    <span class="badge">🔒 AES-256 Active</span>
-
-    <span class="badge">📡 Socket Connected</span>
-
-</div>
-
-<script>
-
-const messages =
-document.getElementById("messages");
-
-function time(){
-
-    let d = new Date();
-
-    return d.getHours() + ":" +
-           String(d.getMinutes())
-           .padStart(2,'0');
+// Hàm tính lũy thừa nhị phân (base^exp % mod) để tính toán toán học DH chính xác
+function power(base, exp, mod) {
+    let res = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 === 1) res = (res * base) % mod;
+        exp = Math.floor(exp / 2);
+        base = (base * base) % mod;
+    }
+    return res;
 }
 
-function sendA(){
+const g = 5;
+const p = 997; // Số nguyên tố lớn để chia dư
 
-    let text =
-    document.getElementById("inputA")
-    .value.trim();
+// Khởi tạo các số ngẫu nhiên cho thuật toán DH giả lập nhưng chính xác về toán học
+const myPrivateKeyNumber = Math.floor(Math.random() * 100) + 1;
+const myPublicKeyNumber = power(g, myPrivateKeyNumber, p);
 
-    if(text==="") return;
+const myPrivateKey = "PRIV_" + myPrivateKeyNumber;
+const myPublicKey = "PUB_" + myPublicKeyNumber;
 
-    messages.innerHTML += `
-    <div class="message a">
-        👤 Client A :
-        🔒 ${text}
-        <div class="time">
-            ${time()}
-        </div>
-    </div>`;
+let sharedKey = null; // Khóa AES chung sau khi bắt tay DH thành công
+let chatMode = "pair"; 
 
-    document.getElementById("inputA")
-    .value="";
-
-    messages.scrollTop =
-    messages.scrollHeight;
+function appendMessage(sender, text, isSystem = false, isCipher = false) {
+    let messages = document.getElementById("messages");
+    let div = document.createElement("div");
+    div.className = "message";
+    if (isSystem) {
+        div.innerHTML = `<span class="sender system">${sender}:</span> <span class="text system">${text}</span>`;
+    } else if (isCipher) {
+        div.innerHTML = `<span class="sender">${sender}:</span> <span class="text ciphertext-msg">🔒 [Bảo mật] ${text}</span>`;
+    } else {
+        div.innerHTML = `<span class="sender">${sender}:</span> <span class="text">${text}</span>`;
+    }
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
 }
 
-function sendB(){
-
-    let text =
-    document.getElementById("inputB")
-    .value.trim();
-
-    if(text==="") return;
-
-    messages.innerHTML += `
-    <div class="message b">
-        👤 Client B :
-        🔒 ${text}
-        <div class="time">
-            ${time()}
-        </div>
-    </div>`;
-
-    document.getElementById("inputB")
-    .value="";
-
-    messages.scrollTop =
-    messages.scrollHeight;
+function switchMode() {
+    let btn = document.getElementById("modeBtn");
+    let input = document.getElementById("messageInput");
+    let sendBtn = document.getElementById("sendBtn");
+    if (chatMode === "pair") {
+        chatMode = "everyone";
+        btn.innerText = "Chế độ hiện tại: PHÒNG CHUNG (Mã hóa Solo)";
+        btn.classList.add("group-mode");
+        appendMessage("Hệ thống", "ĐÃ CHUYỂN SANG CHAT CHUNG", true);
+        
+        // Mở chat cho mọi người tham gia ở phòng chung
+        input.disabled = false;
+        input.placeholder = "Nhập tin nhắn tại đây...";
+        sendBtn.disabled = false;
+    } else {
+        chatMode = "pair";
+        btn.innerText = "Chế độ hiện tại: CHAT ĐÔI (Mã hóa Cặp)";
+        btn.classList.remove("group-mode");
+        appendMessage("Hệ thống", "Đã quay về CHAT ĐÔI", true);
+        
+        // Trả lại trạng thái dựa trên việc đã hoán đổi khóa hay chưa
+        if (sharedKey) {
+            input.disabled = false;
+            input.placeholder = "Nhập tin nhắn tại đây...";
+            sendBtn.disabled = false;
+        } else {
+            input.disabled = true;
+            input.placeholder = "Đang đợi người thứ 2 tham gia để hoán đổi khóa...";
+            sendBtn.disabled = true;
+        }
+    }
 }
 
-document.getElementById("inputA")
-.addEventListener("keydown",e=>{
-
-    if(e.key==="Enter")
-        sendA();
-
+// 1. Kết nối -> Gửi Public Key lên Server
+socket.on('connect', function() {
+    appendMessage("Hệ thống", `Kết nối thành công. Bạn là: ${myUsername}`, true);
+    socket.emit('share_public_key', { username: myUsername, public_key: myPublicKey });
 });
 
-document.getElementById("inputB")
-.addEventListener("keydown",e=>{
-
-    if(e.key==="Enter")
-        sendB();
-
+// Bị mất kết nối đến server
+socket.on('disconnect', function() {
+    appendMessage("Hệ thống", "Mất kết nối với máy chủ chat!", true);
 });
 
+// Sự kiện nhận trạng thái là người thứ 3+ (người quan sát)
+socket.on('spectator_status', function(data) {
+    appendMessage("Hệ thống", data.message, true);
+    if (chatMode === "pair") {
+        document.getElementById("messageInput").placeholder = "Bạn đang là người quan sát. Hãy chuyển sang phòng chung để nhắn tin!";
+    }
+});
+
+// Sự kiện khi có thành viên rời phòng
+socket.on('user_left', function(username) {
+    appendMessage("Hệ thống", `Người dùng ${username} đã rời phòng chat.`, true);
+    sharedKey = null; // reset khóa
+    if (chatMode === "pair") {
+        document.getElementById("messageInput").disabled = true;
+        document.getElementById("messageInput").placeholder = "Đang đợi người thứ 2 tham gia để hoán đổi khóa...";
+        document.getElementById("sendBtn").disabled = true;
+    }
+});
+
+// 2. Nhận danh sách 2 người để tính khóa bí mật chung DH
+socket.on('all_public_keys', function(clientList) {
+    let peer = clientList.find(user => user.username !== myUsername);
+    if (peer) {
+        appendMessage("Hệ thống", `Đang hoán đổi khóa mật với ${peer.username}...`, true);
+        
+        // Trích xuất phần số từ public key của đối phương
+        let peerPublicKeyNumber = parseInt(peer.public_key.replace("PUB_", ""));
+        
+        // Tính toán khóa bí mật chung bằng thuật toán DH (peer_public^my_private % p)
+        let rawSecret = power(peerPublicKeyNumber, myPrivateKeyNumber, p);
+        
+        // Tạo khóa AES từ thuật toán DH bằng mã SHA256 đồng bộ 2 bên
+        sharedKey = CryptoJS.SHA256(rawSecret.toString()).toString();
+
+        appendMessage("Hệ thống", `Kết nối an toàn với ${peer.username} thành công!`, true);
+        
+        // Mở ô chat
+        if (chatMode === "pair") {
+            document.getElementById("messageInput").disabled = false;
+            document.getElementById("messageInput").placeholder = "Nhập tin nhắn tại đây...";
+            document.getElementById("sendBtn").disabled = false;
+        }
+    }
+});
+
+// 3. Hàm gửi tin nhắn mã hóa AES
+function sendMessage(){
+    let input = document.getElementById("messageInput");
+    if(input.value.trim() === "") return;
+
+    let plaintext = input.value;
+    let ciphertext = "";
+    
+    if (chatMode === "pair") {
+        if (!sharedKey) return;
+        ciphertext = CryptoJS.AES.encrypt(plaintext, sharedKey).toString();
+    } else {
+        // Chế độ phòng chung: Mã hóa Solo bằng private key của chính mình
+        ciphertext = CryptoJS.AES.encrypt(plaintext, myPrivateKey).toString();
+    }
+
+    socket.emit('send_secure_message', {
+        sender: myUsername,
+        ciphertext: ciphertext,
+        mode: chatMode
+    });
+
+    appendMessage("Bạn", plaintext);
+    input.value = "";
+}
+
+// 4. Nhận và giải mã tin nhắn
+socket.on('receive_secure_message', function(data) {
+    if (data.mode === "everyone") {
+        // Chế độ phòng chung: Hiển thị ciphertext (khóa bảo mật) cho tất cả người nhận
+        appendMessage(data.sender, data.ciphertext, false, true);
+    } else {
+        // Chế độ chat đôi: Chỉ giải mã nếu có sharedKey
+        if (!sharedKey) return; // Người thứ 3 không có sharedKey sẽ không thấy tin nhắn này
+        try {
+            let bytes = CryptoJS.AES.decrypt(data.ciphertext, sharedKey);
+            let decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+            
+            if (decryptedText) {
+                appendMessage(data.sender, decryptedText);
+            }
+        } catch (error) {
+            // Không hiển thị nếu giải mã thất bại
+        }
+    }
+});
+
+document.getElementById("messageInput").addEventListener("keypress", function(e){
+    if(e.key === "Enter") sendMessage();
+});
 </script>
 
 </body>
